@@ -3,14 +3,13 @@ package file2cloud
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
-func Upload(filePath string, objectKey string) error {
+func Upload(filePath string, objectKey string, contentType ...string) error {
 	if s3Client == nil {
 		return fmt.Errorf("file2cloud no está inicializado. Llama primero a Init()")
 	}
@@ -34,22 +33,18 @@ func Upload(filePath string, objectKey string) error {
 	}
 	defer file.Close()
 
-	// Leer los primeros 512 bytes
-	buffer := make([]byte, 512)
-	_, err = file.Read(buffer)
-	if err != nil {
-		return err
+	input := &s3.PutObjectInput{
+		Bucket:        &bucket,
+		Key:           &objectKey,
+		Body:          file,
+		ContentLength: aws.Int64(info.Size()),
 	}
 
-	// Detectar el tipo MIME
-	contentType := http.DetectContentType(buffer)
+	if len(contentType) > 0 {
+		input.ContentType = aws.String(contentType[0])
+	}
 
-	_, err = s3Client.PutObject(context.TODO(), &s3.PutObjectInput{
-		Bucket:      &bucket,
-		Key:         &objectKey,
-		Body:        file,
-		ContentType: aws.String(contentType),
-	})
+	_, err = s3Client.PutObject(context.TODO(), input)
 	if err != nil {
 		return err
 	}
