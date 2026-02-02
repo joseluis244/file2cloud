@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"log"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
@@ -66,6 +68,22 @@ func Delete(objectKey string) error {
 		Key:    &objectKey,
 	})
 	if err != nil {
+		return err
+	}
+
+	return nil
+}
+func TestConnection() error {
+	if s3Client == nil {
+		return fmt.Errorf("file2cloud no está inicializado. Llama primero a Init()")
+	}
+
+	_, err := s3Client.ListObjectsV2(context.TODO(), &s3.ListObjectsV2Input{
+		Bucket:  &bucket,
+		MaxKeys: aws.Int32(1),
+	})
+	if err != nil {
+		log.Printf("[ERROR] file2cloud: Falla en prueba de conexión S3: %v", err)
 		return err
 	}
 
